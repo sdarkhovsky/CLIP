@@ -18,22 +18,32 @@ train = CIFAR100(root, download=True, train=True, transform=preprocess)
 test = CIFAR100(root, download=True, train=False, transform=preprocess)
 
 
-def get_features(dataset):
+def get_features(dataset, fraction_of_dataset = 1.0):
+    batch_size=100    
+    count_max = int(len(dataset)*fraction_of_dataset/batch_size)
+
     all_features = []
     all_labels = []
-    
+    count = 0
+
     with torch.no_grad():
-        for images, labels in tqdm(DataLoader(dataset, batch_size=100)):
+        for images, labels in tqdm(DataLoader(dataset, batch_size=batch_size)):
             features = model.encode_image(images.to(device))
 
             all_features.append(features)
             all_labels.append(labels)
 
+            count +=1
+            if count > count_max:
+                break
+
+
     return torch.cat(all_features).cpu().numpy(), torch.cat(all_labels).cpu().numpy()
 
 # Calculate the image features
-train_features, train_labels = get_features(train)
-test_features, test_labels = get_features(test)
+fraction_of_dataset = 1.0
+train_features, train_labels = get_features(train, fraction_of_dataset)
+test_features, test_labels = get_features(test, fraction_of_dataset)
 
 # Perform logistic regression
 classifier = LogisticRegression(random_state=0, C=0.316, max_iter=1000, verbose=1)
