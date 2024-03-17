@@ -2,6 +2,7 @@ import os
 import clip
 import torch
 from torchvision.datasets import CIFAR100
+import random
 
 # Load the model
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -11,7 +12,16 @@ model, preprocess = clip.load('ViT-B/32', device)
 cifar100 = CIFAR100(root=os.path.expanduser("~/.cache"), download=True, train=False)
 
 # Prepare the inputs
-image, class_id = cifar100[3637]
+image_ind = random.randint(0, len(cifar100)-1)  #3637
+image, class_id = cifar100[image_ind]
+
+
+print("Image index: ", image_ind, " size: ", image.size, " class ", cifar100.classes[class_id])
+image.save(os.path.expanduser("~/tmp/cifar_image.jpg"))
+with open(os.path.expanduser("~/tmp/cifar_classes.txt"),"w") as cifar_classes_file:
+    for c in cifar100.classes:
+        cifar_classes_file.write(c+"\n")
+
 image_input = preprocess(image).unsqueeze(0).to(device)
 text_inputs = torch.cat([clip.tokenize(f"a photo of a {c}") for c in cifar100.classes]).to(device)
 
